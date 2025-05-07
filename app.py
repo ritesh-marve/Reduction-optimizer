@@ -66,9 +66,10 @@ def upload():
         return send_file(output_stream, mimetype='application/pdf',
                          as_attachment=True, download_name='rearranged_duplex.pdf')
 
+
     except Exception as e:
-        print(f"Error: {e}")  # Logs to terminal or Render
-        return f"Server Error: {e}", 500
+        traceback.print_exc()  # <-- logs full traceback
+        return f"Server Error: {str(e)}", 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
