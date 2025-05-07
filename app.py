@@ -3,9 +3,13 @@ from flask import Flask, request, send_file, send_from_directory
 from flask_cors import CORS
 from io import BytesIO
 import fitz  # PyMuPDF
+import traceback
 
 app = Flask(__name__, static_folder=".")
 CORS(app)  # Enable CORS for frontend access
+
+# Optional: limit uploads to 20MB
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 
 @app.route('/')
 def index():
@@ -27,6 +31,11 @@ def upload():
         pdf_bytes = file.read()
         input_pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
 
+        if input_pdf.page_count == 0:
+            return 'Uploaded PDF has no pages', 400
+
+        print(f"PDF has {input_pdf.page_count} pages.")
+
         # Split odd and even pages
         odd_pages = [i for i in range(input_pdf.page_count) if (i + 1) % 2 == 1]
         even_pages = [i for i in range(input_pdf.page_count) if (i + 1) % 2 == 0]
@@ -45,6 +54,7 @@ def upload():
                 img_rect = fitz.Rect(col * 198.33, row * 280.66,
                                      (col + 1) * 198.33, (row + 1) * 280.66)
                 front_page.insert_image(img_rect, pixmap=pix)
+                print(f"Inserted odd page {page_num + 1} at position ({row}, {col})")
 
             # Back (even) pages
             back_pages = even_pages[i:i + 9]
@@ -57,18 +67,20 @@ def upload():
                     img_rect = fitz.Rect(col * 198.33, row * 280.66,
                                          (col + 1) * 198.33, (row + 1) * 280.66)
                     back_page.insert_image(img_rect, pixmap=pix)
+                    print(f"Inserted even page {page_num + 1} at position ({row}, {col})")
 
         # Return file
         output_stream = BytesIO()
         output_pdf.save(output_stream)
         output_pdf.close()
         output_stream.seek(0)
+
+        print("PDF processing complete. Sending file.")
         return send_file(output_stream, mimetype='application/pdf',
                          as_attachment=True, download_name='rearranged_duplex.pdf')
 
-
     except Exception as e:
-        traceback.print_exc()  # <-- logs full traceback
+        traceback.print_exc()
         return f"Server Error: {str(e)}", 500
 
 if __name__ == '__main__':
