@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, send_file
 import fitz  # PyMuPDF
 from flask_cors import CORS
