@@ -57,4 +57,5 @@ def upload():
     return send_file(output_stream, mimetype='application/pdf', as_attachment=True, download_name='rearranged_duplex.pdf')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
