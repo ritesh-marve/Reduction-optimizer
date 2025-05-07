@@ -1,11 +1,16 @@
 import os
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, send_from_directory
 import fitz  # PyMuPDF
 from flask_cors import CORS
 from io import BytesIO
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=".")
 CORS(app)  # Allow frontend to access backend
+
+@app.route('/')
+def index():
+    # This serves an HTML file (e.g., index.html) if present
+    return send_from_directory('.', 'index.html')
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -40,7 +45,7 @@ def upload():
 
         # Create back side (even pages)
         back_pages = even_pages[i:i+9]
-        if back_pages:  # Only create if we have even pages left
+        if back_pages:
             back_page = output_pdf.new_page(width=595, height=842)
             for idx, page_num in enumerate(back_pages):
                 row = idx // 3
