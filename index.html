@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reduction Optimizer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --secondary: #6366f1;
+      --background: #f8fafc;
+      --foreground: #1e293b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to bottom right, #EEF2FF, #E0E7FF);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+      position: relative;
+      padding: 1.5rem 1.5rem 0.5rem;
+      text-align: center;
+    }
+
+    .card-header:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 0.25rem;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+    }
+
+    .card-title {
+      font-size: 1.875rem;
+      font-weight: 700;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-description {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-bottom: 1rem;
+    }
+
+    .card-content {
+      padding: 1rem 1.5rem;
+    }
+
+    .drop-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragging {
+      border-color: var(--primary);
+      background-color: #f0f7ff;
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: var(--primary);
+      margin-top: 0.75rem;
+    }
+
+    .button {
+      margin-top: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      font-weight: 500;
+      padding: 0.875rem;
+      border-radius: 0.5rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .button:hover {
+      filter: brightness(1.1);
+    }
+
+    .button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    #loadingMessage {
+      text-align: center;
+      margin-top: 1rem;
+      color: var(--foreground);
+      font-size: 0.875rem;
+    }
+
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+      color: #64748b;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Reduction Optimizer</div>
+        <div class="card-description">Rearrange your PDF into a 3x3 duplex-ready layout.</div>
+      </div>
+      <div class="card-content">
+        <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+          <div>📄 Drag & drop your PDF file here or click to select it.</div>
+          <div id="fileName" class="file-name"></div>
+        </div>
+        <input type="file" id="fileInput" accept="application/pdf" style="display: none" />
+        <button id="uploadBtn" class="button" onclick="upload()">Convert & Download</button>
+        <div id="loadingMessage" style="display: none;">⏳ Please wait while we process your file...</div>
+      </div>
+    </div>
+    <div class="footer">Built with ❤️ using Flask and PyMuPDF</div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        fileName.textContent = fileInput.files[0].name;
+      }
+    });
+
+    async function upload() {
+      if (!fileInput.files[0]) {
+        alert("Please select a PDF file.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      uploadBtn.disabled = true;
+      loadingMessage.style.display = "block";
+
+      try {
+        const res = await fetch('http://127.0.0.1:5000/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          alert("Error: " + errorText);
+          return;
+        }
+
+        const blob = await res.blob();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'rearranged_duplex.pdf';
+        link.click();
+      } catch (err) {
+        alert("Upload failed: " + err.message);
+      } finally {
+        uploadBtn.disabled = false;
+        loadingMessage.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>
