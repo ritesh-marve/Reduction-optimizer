@@ -28,6 +28,11 @@ def upload():
         if not file.filename.lower().endswith('.pdf'):
             return 'Uploaded file is not a PDF', 400
 
+        # Check for file size limit
+        if len(file.read()) > 20 * 1024 * 1024:  # 20MB limit
+            return 'File size exceeds 20MB', 400
+        file.seek(0)  # Reset the file pointer
+
         pdf_bytes = file.read()
         input_pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
 
@@ -77,7 +82,7 @@ def upload():
 
         print("PDF processing complete. Sending file.")
         return send_file(output_stream, mimetype='application/pdf',
-                         as_attachment=True, download_name='rearranged_duplex.pdf')
+                         as_attachment=True, download_name='rearranged_duplex.pdf', cache_timeout=0)
 
     except Exception as e:
         traceback.print_exc()
