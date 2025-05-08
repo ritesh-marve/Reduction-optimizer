@@ -1,3 +1,4 @@
-Flask==2.3.3
-flask-cors==4.0.0
-PyMuPDF==1.23.26
+Flask==2.3.2
+PyMuPDF==1.25.5
+Flask-Cors==5.0.1
+gunicorn==22.1.0
