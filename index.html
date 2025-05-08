@@ -1,90 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reduction Optimizer</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    /* Existing styles here */
-  </style>
+  <meta charset="utf-8">
+  <title>PDF 3×3 Converter</title>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Reduction Optimizer</div>
-        <div class="card-description">Rearrange your PDF into a 3x3 duplex-ready layout.</div>
-      </div>
-      <div class="card-content">
-        <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-          <div>📄 Drag & drop your PDF file here or click to select it.</div>
-          <div id="fileName" class="file-name"></div>
-        </div>
-        <input type="file" id="fileInput" accept="application/pdf" style="display: none" />
-        <button id="uploadBtn" class="button" onclick="upload()">Convert & Download</button>
-        <div id="loadingMessage" style="display: none;">⏳ Please wait while we process your file...</div>
-      </div>
-    </div>
-    <div class="footer">Built with ❤️ using Flask and PyMuPDF</div>
-  </div>
+  <input type="file" id="fileInput" accept=".pdf">
+  <button id="convertButton">Convert & Download</button>
 
   <script>
-    const fileInput = document.getElementById('fileInput');
-    const fileName = document.getElementById('fileName');
-    const loadingMessage = document.getElementById('loadingMessage');
-    const uploadBtn = document.getElementById('uploadBtn');
-
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length > 0) {
-        fileName.textContent = fileInput.files[0].name;
+    document.getElementById('convertButton').addEventListener('click', async () => {
+      const input = document.getElementById('fileInput');
+      if (!input.files[0]) {
+        alert('Please select a PDF file first.');
+        return;
+      }
+      // Prepare form data
+      const formData = new FormData();
+      formData.append('file', input.files[0]);
+      try {
+        // Send the file via POST
+        const response = await fetch('/convert', { method: 'POST', body: formData });
+        if (!response.ok) throw new Error(`Upload failed: ${response.statusText}`);
+        // Get the PDF blob from the response
+        const blob = await response.blob();
+        // Create a download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'converted.pdf';
+        document.body.appendChild(a);
+        a.click();
+        // Cleanup
+        URL.revokeObjectURL(url);
+        a.remove();
+      } catch (err) {
+        console.error(err);
+        alert('Error during conversion: ' + err.message);
       }
     });
-
-    async function upload() {
-      if (!fileInput.files[0]) {
-        alert("Please select a PDF file.");
-        return;
-      }
-
-      const file = fileInput.files[0];
-
-      // File validation
-      if (file.type !== 'application/pdf') {
-        alert("Please select a valid PDF file.");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("file", file);
-
-      uploadBtn.disabled = true;
-      loadingMessage.style.display = "block";
-
-      try {
-        const res = await fetch("https://reduction-optimizer.onrender.com/upload", {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          alert("Error: " + errorText);
-          return;
-        }
-
-        const blob = await res.blob();
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'rearranged_duplex.pdf';
-        link.click();
-      } catch (err) {
-        alert("Upload failed: " + err.message);
-      } finally {
-        uploadBtn.disabled = false;
-        loadingMessage.style.display = "none";
-      }
-    }
   </script>
 </body>
 </html>
