@@ -1,42 +1,74 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF 3×3 Converter</title>
+  <style>
+    #loading { display: none; }
+    #convertButton:disabled { background-color: #ccc; }
+  </style>
 </head>
 <body>
+  <h1>Convert PDF to 3x3 Grid</h1>
   <input type="file" id="fileInput" accept=".pdf">
   <button id="convertButton">Convert & Download</button>
+  <p id="loading">Processing... Please wait.</p>
 
   <script>
     document.getElementById('convertButton').addEventListener('click', async () => {
       const input = document.getElementById('fileInput');
+      const loadingText = document.getElementById('loading');
+      const convertButton = document.getElementById('convertButton');
+
       if (!input.files[0]) {
         alert('Please select a PDF file first.');
         return;
       }
+
+      // Check if file is a PDF
+      const file = input.files[0];
+      if (file.type !== 'application/pdf') {
+        alert('Invalid file type. Please upload a PDF.');
+        return;
+      }
+
+      // Show loading text and disable the button
+      loadingText.style.display = 'block';
+      convertButton.disabled = true;
+
       // Prepare form data
       const formData = new FormData();
-      formData.append('file', input.files[0]);
+      formData.append('file', file);
+
       try {
         // Send the file via POST
         const response = await fetch('/convert', { method: 'POST', body: formData });
+
         if (!response.ok) throw new Error(`Upload failed: ${response.statusText}`);
+
         // Get the PDF blob from the response
         const blob = await response.blob();
-        // Create a download link
         const url = URL.createObjectURL(blob);
+
+        // Create a download link
         const a = document.createElement('a');
         a.href = url;
         a.download = 'converted.pdf';
         document.body.appendChild(a);
         a.click();
+
         // Cleanup
         URL.revokeObjectURL(url);
         a.remove();
+
       } catch (err) {
         console.error(err);
         alert('Error during conversion: ' + err.message);
+      } finally {
+        // Hide loading text and enable the button
+        loadingText.style.display = 'none';
+        convertButton.disabled = false;
       }
     });
   </script>
