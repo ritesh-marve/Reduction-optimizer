@@ -1,7 +1,7 @@
 import os
 import io
 import fitz  # PyMuPDF
-from flask import Flask, request, send_file, abort
+from flask import Flask, request, send_file, abort, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -14,6 +14,11 @@ ALLOWED_EXTENSIONS = {'pdf'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/')
+def index():
+    # Serve index.html from the current directory
+    return send_from_directory(os.getcwd(), 'index.html')
 
 @app.route('/convert', methods=['POST'])
 def convert_pdf():
