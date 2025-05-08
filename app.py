@@ -7,6 +7,27 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  # Allow all origins (adjust as needed)
 
+import logging
+from logging.handlers import RotatingFileHandler
+import sys
+
+# Logging to console (Render dashboard)
+app.logger.setLevel(logging.INFO)
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+app.logger.addHandler(console_handler)
+
+# Logging to file (rotating file handler)
+log_file = "server.log"
+file_handler = RotatingFileHandler(log_file, maxBytes=100000, backupCount=3)
+file_handler.setLevel(logging.INFO)
+file_formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+file_handler.setFormatter(file_formatter)
+app.logger.addHandler(file_handler)
+
+app.logger.info("App has started and logging is configured.")
+
+
 # Limit max upload to 20 MB (optional)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20 MB
 
