@@ -5,12 +5,13 @@ from flask import Flask, request, send_file, abort
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Allow all origins (adjust as needed):contentReference[oaicite:3]{index=3}
+CORS(app)  # Allow all origins (adjust as needed)
 
 # Limit max upload to 20 MB (optional)
-app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20 MB:contentReference[oaicite:4]{index=4}
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20 MB
 
 ALLOWED_EXTENSIONS = {'pdf'}
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -19,12 +20,15 @@ def convert_pdf():
     # Check file part
     if 'file' not in request.files:
         return abort(400, 'No file part')
+    
     file = request.files['file']
+    
     if file.filename == '' or not allowed_file(file.filename):
         return abort(400, 'Invalid file')
 
     # Read PDF from the uploaded file
     pdf_bytes = file.read()
+    
     try:
         src_pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
     except Exception as e:
@@ -60,9 +64,16 @@ def convert_pdf():
     out_bytes = io.BytesIO()
     output_pdf.save(out_bytes)
     output_pdf.close()
-    out_bytes.seek(0)  # rewind after writing:contentReference[oaicite:5]{index=5}
+    out_bytes.seek(0)  # rewind after writing
 
     return send_file(out_bytes,
                      mimetype='application/pdf',
                      as_attachment=True,
                      download_name='converted.pdf')
+
+# Optional: log to Render dashboard
+import logging, sys
+app.logger.setLevel(logging.INFO)
+handler = logging.StreamHandler(sys.stdout)
+app.logger.addHandler(handler)
+app.logger.info("App has started.")
